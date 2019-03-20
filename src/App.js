@@ -277,6 +277,9 @@ function now() {
   return new Date().getTime();
 }
 
+const doNothing = async (m) => {
+};
+
 class App extends Component {
 
   constructor(props, context) {
@@ -285,10 +288,12 @@ class App extends Component {
       password: credentials.password,
       complete: "",
       decrypted: {},
+      viewPrefs: {},
     };
     this.decryptOne = this.decryptOne.bind(this);
     this.decryptMany = this.decryptMany.bind(this);
     this.decryptAll = this.decryptAll.bind(this);
+    this.toggleView = this.toggleView.bind(this);
   }
 
   componentDidMount() {
@@ -350,8 +355,26 @@ class App extends Component {
     console.log("returned from decryptAll in", now() - start);
   }
 
+  toggleView() {
+    // toggle how encrypted messages appear
+    const start = now();
+    for (let m of messages) {
+      doNothing(m).then(() => {
+        const {viewPrefs} = this.state;
+        const copy = {...viewPrefs};
+        copy[m.id] = !viewPrefs[m.id];
+        this.setState({viewPrefs: copy});
+        let trues = Object.values(this.state.viewPrefs).filter(p => !!p);
+        if (trues.length === messages.length || trues.length === 0) {
+          console.log("completed toggleView in", now() - start);
+        }
+      });
+    }
+    console.log("returned from decryptAll in", now() - start);
+  }
+
   render() {
-    const {decrypted, complete} = this.state;
+    const {decrypted, viewPrefs, complete} = this.state;
     return (
         <div className="App">
           <header className="App-header">
@@ -371,11 +394,13 @@ class App extends Component {
             </button>
             <button onClick={this.decryptMany}>Decrypt Many</button>
             <button onClick={this.decryptAll}>Decrypt All</button>
+            <button onClick={this.toggleView}>Toggle View</button>
             <br/>
             {!!complete && <h4>{complete}</h4>}
             {!complete && messages.map(m => (
                 <div onClick={() => this.decryptOne(m)} key={m.id}>
-                  {m.id}: {decrypted[m.id] || "encrypted"}
+                  {m.id}: {decrypted[m.id] || (viewPrefs[m.id] ? m.text.length
+                    : "encrypted")}
                 </div>
             ))}
           </content>
